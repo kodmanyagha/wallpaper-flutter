@@ -83,6 +83,9 @@ class _FullImageState extends State<FullImage> {
 
   @override
   Widget build(BuildContext context) {
+    String appbarTitle =
+        Global.images[Global.index].file_name.replaceAll('-', ' ').replaceAll('.png', '');
+
     String btnSetWallpaperText = _progress == "" ? "Duvar Kağıdı Ayarla" : _progress;
     Widget btnSetWallpaperIcon = _progress == ""
         ? Icon(Icons.image_outlined)
@@ -95,7 +98,7 @@ class _FullImageState extends State<FullImage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.indigo,
-        title: Text('Wallpapers'),
+        title: Text(appbarTitle),
         elevation: 5.0,
       ),
       body: Padding(
@@ -128,6 +131,19 @@ class _FullImageState extends State<FullImage> {
                         );
                       },
                     ),
+                    Divider(
+                      height: 10,
+                      thickness: 0,
+                      color: Colors.transparent,
+                    ),
+                    Text(
+                      'Resim Bilgisi:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(appbarTitle),
                     Divider(
                       height: 10,
                       thickness: 0,
