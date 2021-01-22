@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:downloads_path_provider_28/downloads_path_provider_28.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,7 @@ class _FullImageState extends State<FullImage> {
   PageController pageController = PageController(initialPage: Global.index);
   final Dio _dio = Dio();
   String _progress = "";
+  bool _btnSetWallpaperEnabled = true;
 
   void startForegroundService() async {
     await FlutterForegroundPlugin.setServiceMethodInterval(seconds: 5);
@@ -81,10 +83,20 @@ class _FullImageState extends State<FullImage> {
     throw Exception('Unsupported platform');
   }
 
+  static void _setWallpaper(String savePath) {
+    int location = WallpaperManager.HOME_SCREEN; // or location = WallpaperManager.LOCK_SCREEN;
+    WallpaperManager.setWallpaperFromFile(savePath, location)
+        .whenComplete(() => {Global.showToast("Duvar kağıdı ayarlandı.")});
+  }
+
   @override
   Widget build(BuildContext context) {
-    String appbarTitle =
-        Global.images[Global.index].file_name.replaceAll('-', ' ').replaceAll('.png', '');
+    String appbarTitle = Global.images[Global.index].file_name
+        .replaceAll('-', ' ')
+        .replaceAll(Global.images[Global.index].remote_id.toString(), '')
+        .replaceAll('.png', '')
+        .trim();
+    appbarTitle = "${appbarTitle[0].toUpperCase()}${appbarTitle.substring(1)}.";
 
     String btnSetWallpaperText = _progress == "" ? "Duvar Kağıdı Ayarla" : _progress;
     Widget btnSetWallpaperIcon = _progress == ""
@@ -152,34 +164,38 @@ class _FullImageState extends State<FullImage> {
                     RaisedButton.icon(
                       icon: btnSetWallpaperIcon,
                       label: Text(btnSetWallpaperText),
-                      onPressed: () async {
-                        try {
-                          bool permissionGranted = await _checkPermission();
+                      onPressed: _btnSetWallpaperEnabled
+                          ? () async {
+                              try {
+                                setState(() {
+                                  _btnSetWallpaperEnabled = false;
+                                });
+                                bool permissionGranted = await _checkPermission();
 
-                          if (permissionGranted) {
-                            String fileUrl = Global.images[index].original_url;
-                            String fileName = Global.images[index].file_name;
-                            String downloadDir = (await _getDownloadDirectory()).path;
-                            String savePath = downloadDir + '/' + fileName;
+                                if (permissionGranted) {
+                                  String fileUrl = Global.images[index].original_url;
+                                  String fileName = Global.images[index].file_name;
+                                  String downloadDir = (await _getDownloadDirectory()).path;
+                                  String savePath = downloadDir + '/' + fileName;
 
-                            await _startDownload(savePath, fileUrl);
+                                  await _startDownload(savePath, fileUrl);
 
-                            int location = WallpaperManager
-                                .HOME_SCREEN; // or location = WallpaperManager.LOCK_SCREEN;
-                            final String result =
-                                await WallpaperManager.setWallpaperFromFile(savePath, location);
+                                  Isolate.spawn(_setWallpaper, savePath);
 
-                            Global.showSnackBar(context, "Duvar kağıdı ayarlandı.");
-                            setState(() {
-                              _progress = "";
-                            });
-                          } else {
-                            Global.showSnackBar(context, "Yetki vermeniz gerekmektedir.");
-                          }
-                        } on PlatformException catch (error) {
-                          print(error);
-                        }
-                      },
+                                  setState(() {
+                                    _progress = "";
+                                  });
+                                } else {
+                                  Global.showSnackBar(context, "Yetki vermeniz gerekmektedir.");
+                                }
+                              } on PlatformException catch (error) {
+                                print(error);
+                              }
+                              setState(() {
+                                _btnSetWallpaperEnabled = true;
+                              });
+                            }
+                          : null,
                     ),
                   ],
                 ),
