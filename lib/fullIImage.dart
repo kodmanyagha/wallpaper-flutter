@@ -1,14 +1,11 @@
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:downloads_path_provider_28/downloads_path_provider_28.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_foreground_plugin/flutter_foreground_plugin.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'global.dart';
 import 'package:wallpaper_manager/wallpaper_manager.dart';
-import 'package:path/path.dart' as path;
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -23,30 +20,7 @@ class _FullImageState extends State<FullImage> {
   String _progress = "";
   bool _btnSetWallpaperEnabled = true;
 
-  void startForegroundService() async {
-    await FlutterForegroundPlugin.setServiceMethodInterval(seconds: 5);
-    await FlutterForegroundPlugin.setServiceMethod(globalForegroundService);
-    await FlutterForegroundPlugin.startForegroundService(
-      holdWakeLock: false,
-      onStarted: () {
-        print("Foreground on Started");
-      },
-      onStopped: () {
-        print("Foreground on Stopped");
-      },
-      title: "Flutter Foreground Service",
-      content: "This is Content",
-      iconName: "ic_stat_hot_tub",
-    );
-  }
-
-  void globalForegroundService() {
-    debugPrint("current datetime is ${DateTime.now()}");
-  }
-
   Future<void> _startDownload(String savePath, String fileUrl) async {
-    startForegroundService();
-
     final response = await _dio.download(fileUrl, savePath, onReceiveProgress: _onReceiveProgress);
   }
 
@@ -81,12 +55,6 @@ class _FullImageState extends State<FullImage> {
     }
 
     throw Exception('Unsupported platform');
-  }
-
-  static void _setWallpaper(String savePath) {
-    int location = WallpaperManager.HOME_SCREEN; // or location = WallpaperManager.LOCK_SCREEN;
-    WallpaperManager.setWallpaperFromFile(savePath, location)
-        .whenComplete(() => {Global.showToast("Duvar kağıdı ayarlandı.")});
   }
 
   @override
@@ -180,7 +148,10 @@ class _FullImageState extends State<FullImage> {
 
                                   await _startDownload(savePath, fileUrl);
 
-                                  Isolate.spawn(_setWallpaper, savePath);
+                                  int location = WallpaperManager
+                                      .HOME_SCREEN; // or location = WallpaperManager.LOCK_SCREEN;
+                                  WallpaperManager.setWallpaperFromFile(savePath, location)
+                                      .whenComplete(() => {Global.showToast("Duvar kağıdı ayarlandı.")});
 
                                   setState(() {
                                     _progress = "";

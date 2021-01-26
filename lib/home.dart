@@ -24,10 +24,6 @@ class _HomeState extends State<Home> {
     setState(() {});
   }
 
-  void globalForegroundService() {
-    debugPrint("current datetime is ${DateTime.now()}");
-  }
-
   @override
   void initState() {
     super.initState();
